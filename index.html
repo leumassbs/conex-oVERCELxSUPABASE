@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Login — Vercel + Supabase</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -411,5 +412,26 @@
       });
     });
   </script>
+  
+  <script>
+  const { createClient } = supabase
+
+  const SUPABASE_URL = 'https://iepxtpkmhxnsbhudhxkq.supabase.co'
+  const SUPABASE_KEY = 'sb_publishable_fMieAbuMOB19cU4QAtCxbQ_H0foIs5l'
+
+  const db = createClient(SUPABASE_URL, SUPABASE_KEY)
+
+  // Teste de conexão
+  async function testarConexao() {
+    const { data, error } = await db.auth.getSession()
+    if (error) {
+      console.error('Erro na conexão:', error)
+    } else {
+      console.log('Supabase conectado com sucesso!', data)
+    }
+  }
+
+  testarConexao()
+</script>
 </body>
 </html>
