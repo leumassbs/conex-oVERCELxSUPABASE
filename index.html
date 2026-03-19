@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Login — Vercel + Supabase</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --border: rgba(255,255,255,0.07);
+      --border-hover: rgba(255,255,255,0.18);
+      --text: #f0f0f5;
+      --muted: #6b6b80;
+      --accent-v: #ffffff;
+      --accent-s: #3ecf8e;
+      --input-bg: #18181f;
+      --error: #ff5757;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Syne', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 48px 48px;
+      pointer-events: none;
+    }
+
+    /* Glows */
+    .glow-v {
+      position: fixed;
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 70%);
+      top: -100px; left: -100px;
+      pointer-events: none;
+    }
+    .glow-s {
+      position: fixed;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(62,207,142,0.08) 0%, transparent 70%);
+      bottom: -50px; right: -50px;
+      pointer-events: none;
+    }
+
+    .card {
+      position: relative;
+      width: 420px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 40px;
+      animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Top badge */
+    .badge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+    .badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.02em;
+    }
+    .badge-v {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #fff;
+    }
+    .badge-s {
+      background: rgba(62,207,142,0.08);
+      border: 1px solid rgba(62,207,142,0.2);
+      color: var(--accent-s);
+    }
+    .badge-sep {
+      color: var(--muted);
+      font-size: 18px;
+      line-height: 1;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+    }
+    .dot-v { background: #fff; }
+    .dot-s { background: var(--accent-s); }
+
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 6px;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 400;
+      margin-bottom: 32px;
+      line-height: 1.5;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 7px;
+    }
+    input {
+      width: 100%;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 14px;
+      font-family: 'DM Mono', monospace;
+      font-size: 13px;
+      color: var(--text);
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input::placeholder { color: var(--muted); }
+    input:focus {
+      border-color: var(--border-hover);
+      box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
+    }
+    input.error-field {
+      border-color: var(--error);
+      box-shadow: 0 0 0 3px rgba(255,87,87,0.08);
+    }
+
+    .error-msg {
+      font-size: 11px;
+      color: var(--error);
+      font-family: 'DM Mono', monospace;
+      margin-top: 5px;
+      display: none;
+    }
+    .error-msg.show { display: block; }
+
+    .forgot {
+      text-align: right;
+      margin-top: -6px;
+      margin-bottom: 20px;
+    }
+    .forgot a {
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .forgot a:hover { color: var(--text); }
+
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border-radius: 8px;
+      border: none;
+      font-family: 'Syne', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-primary {
+      background: var(--text);
+      color: var(--bg);
+      margin-bottom: 12px;
+    }
+    .btn-primary:hover {
+      background: #d4d4df;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255,255,255,0.1);
+    }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary.loading { pointer-events: none; opacity: 0.7; }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .btn-outline:hover {
+      border-color: var(--border-hover);
+      background: rgba(255,255,255,0.03);
+    }
+
+    .divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 20px 0;
+      color: var(--muted);
+      font-size: 11px;
+      font-family: 'DM Mono', monospace;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .footer-text {
+      text-align: center;
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .footer-text a {
+      color: var(--accent-s);
+      text-decoration: none;
+      font-weight: 600;
+    }
+    .footer-text a:hover { text-decoration: underline; }
+
+    /* Spinner */
+    .spinner {
+      display: none;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(0,0,0,0.2);
+      border-top-color: var(--bg);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+    }
+    @keyframes spin { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+    .btn-text { transition: opacity 0.2s; }
+    .btn-primary.loading .btn-text { opacity: 0; }
+    .btn-primary.loading .spinner { display: block; }
+
+    /* Success toast */
+    .toast {
+      position: fixed;
+      bottom: 24px; left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--accent-s);
+      color: #0a1a12;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-family: 'DM Mono', monospace;
+      font-weight: 500;
+      opacity: 0;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    /* Github icon */
+    svg.github { fill: currentColor; }
+  </style>
+</head>
+<body>
+  <div class="glow-v"></div>
+  <div class="glow-s"></div>
+
+  <div class="card">
+    <div class="badge-row">
+      <span class="badge badge-v"><span class="dot dot-v"></span>Vercel</span>
+      <span class="badge-sep">×</span>
+      <span class="badge badge-s"><span class="dot dot-s"></span>Supabase</span>
+    </div>
+
+    <h1>Bem-vindo de volta</h1>
+    <p class="subtitle">Acesse sua conta para gerenciar<br>sua integração.</p>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="email" placeholder="voce@exemplo.com" autocomplete="email"/>
+      <p class="error-msg" id="email-error">Insira um email válido.</p>
+    </div>
+
+    <div class="field">
+      <label>Senha</label>
+      <input type="password" id="password" placeholder="••••••••" autocomplete="current-password"/>
+      <p class="error-msg" id="password-error">A senha deve ter pelo menos 6 caracteres.</p>
+    </div>
+
+    <div class="forgot"><a href="#">Esqueceu a senha?</a></div>
+
+    <button class="btn btn-primary" id="login-btn" onclick="handleLogin()">
+      <span class="btn-text">Entrar</span>
+      <span class="spinner"></span>
+    </button>
+
+    <div class="divider">ou continue com</div>
+
+    <button class="btn btn-outline" onclick="handleGithub()">
+      <svg class="github" width="16" height="16" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+      </svg>
+      GitHub
+    </button>
+
+    <p class="footer-text">Não tem uma conta? <a href="#">Criar conta</a></p>
+  </div>
+
+  <div class="toast" id="toast">✓ Login realizado com sucesso!</div>
+
+  <script>
+    function validate() {
+      const email = document.getElementById('email');
+      const password = document.getElementById('password');
+      const emailErr = document.getElementById('email-error');
+      const passErr = document.getElementById('password-error');
+      let valid = true;
+
+      const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.value.trim());
+      if (!emailOk) {
+        email.classList.add('error-field');
+        emailErr.classList.add('show');
+        valid = false;
+      } else {
+        email.classList.remove('error-field');
+        emailErr.classList.remove('show');
+      }
+
+      if (password.value.length < 6) {
+        password.classList.add('error-field');
+        passErr.classList.add('show');
+        valid = false;
+      } else {
+        password.classList.remove('error-field');
+        passErr.classList.remove('show');
+      }
+
+      return valid;
+    }
+
+    function handleLogin() {
+      if (!validate()) return;
+      const btn = document.getElementById('login-btn');
+      btn.classList.add('loading');
+
+      // Simulação de chamada ao Supabase
+      // const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      setTimeout(() => {
+        btn.classList.remove('loading');
+        showToast('✓ Login realizado com sucesso!');
+      }, 1800);
+    }
+
+    function handleGithub() {
+      // supabase.auth.signInWithOAuth({ provider: 'github' });
+      showToast('↗ Redirecionando para GitHub...');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    // Clear errors on input
+    ['email', 'password'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        document.getElementById(id).classList.remove('error-field');
+        document.getElementById(id + '-error').classList.remove('show');
+      });
+    });
+  </script>
+</body>
+</html>
