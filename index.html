@@ -349,6 +349,40 @@
 
   <div class="toast" id="toast">✓ Login realizado com sucesso!</div>
 
+<input id="nome">
+<button onclick="add()">Adicionar</button>
+<ul id="lista"></ul>
+
+<script>
+async function add() {
+  const nome = document.getElementById("nome").value;
+  await db.from('usuarios').insert([{ nome }]);
+  listar();
+}
+
+async function listar() {
+  const { data } = await db.from('usuarios').select('*');
+  const lista = document.getElementById("lista");
+  lista.innerHTML = "";
+
+  data.forEach(user => {
+    lista.innerHTML += `
+      <li>
+        ${user.nome}
+        <button onclick="remover(${user.id})">X</button>
+      </li>
+    `;
+  });
+}
+
+async function remover(id) {
+  await db.from('usuarios').delete().eq('id', id);
+  listar();
+}
+
+listar();
+</script>
+
   <script>
     function validate() {
       const email = document.getElementById('email');
